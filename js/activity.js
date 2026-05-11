@@ -5,14 +5,14 @@ function formatDate(iso) {
 }
 
 function formatPace(seconds) {
-  if (!seconds) return '—';
+  if (seconds == null) return '—';
   const m = Math.floor(seconds / 60);
   const s = String(seconds % 60).padStart(2, '0');
   return `${m}:${s}`;
 }
 
 function formatDuration(seconds) {
-  if (!seconds) return '—';
+  if (seconds == null) return '—';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
@@ -39,7 +39,7 @@ function renderStatCards(activity) {
     hideCard('stat-hr-card');
   }
 
-  if (activity.elevationGain !== null) {
+  if (activity.elevationGain != null) {
     document.getElementById('stat-elevation').textContent = `+${activity.elevationGain} / -${activity.elevationLoss}`;
   } else {
     hideCard('stat-elevation-card');
@@ -59,13 +59,23 @@ function renderStatCards(activity) {
 }
 
 function renderMap(activity) {
-  const coords = activity.trackpoints.map(p => [p.lat, p.lon]);
+  const trackpoints = activity.trackpoints || [];
+  if (trackpoints.length === 0) return;
+  const coords = trackpoints.map(p => [p.lat, p.lon]);
   const map = L.map('map');
 
   L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { attribution: 'Tiles &copy; Esri', maxZoom: 18 }
   ).addTo(map);
+
+  if (coords.length === 1) {
+    map.setView(coords[0], 15);
+    L.circleMarker(coords[0], {
+      radius: 8, fillColor: '#34d399', color: '#fff', weight: 2, fillOpacity: 1
+    }).bindTooltip('Start', { permanent: false }).addTo(map);
+    return;
+  }
 
   const polyline = L.polyline(coords, { color: '#38bdf8', weight: 3, opacity: 0.9 }).addTo(map);
   map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
@@ -80,6 +90,7 @@ function renderMap(activity) {
 }
 
 function renderCharts(activity) {
+  const trackpoints = activity.trackpoints || [];
   const chartBase = {
     responsive: true,
     plugins: { legend: { display: false } },
@@ -90,7 +101,7 @@ function renderCharts(activity) {
   };
 
   // Elevation chart
-  const elePts = activity.trackpoints.filter(p => p.ele !== null);
+  const elePts = trackpoints.filter(p => p.ele !== null);
   if (elePts.length > 1) {
     new Chart(document.getElementById('chart-elevation'), {
       type: 'line',
@@ -117,7 +128,7 @@ function renderCharts(activity) {
   }
 
   // HR chart
-  const hrPts = activity.trackpoints.filter(p => p.hr !== null);
+  const hrPts = trackpoints.filter(p => p.hr !== null);
   if (hrPts.length > 1) {
     new Chart(document.getElementById('chart-hr'), {
       type: 'line',
@@ -166,7 +177,7 @@ function renderCharts(activity) {
               color: '#94a3b8',
               callback: (v) => {
                 const m = Math.floor(v / 60);
-                const s = String(v % 60).padStart(2, '0');
+                const s = String(Math.floor(v % 60)).padStart(2, '0');
                 return `${m}:${s}`;
               }
             }
