@@ -186,8 +186,45 @@ test('calculatePaceSegments: returns 1 segment for exactly 1 km', () => {
   assert(segs[0].pace > 0, `Pace should be > 0`);
 });
 
-// ── IndexedDB Tests (placeholders — will be filled in Task 3) ─────────────────
-// (no DB tests yet)
+// ── IndexedDB Tests ───────────────────────────────────────────────────────────
+const TEST_ACTIVITY = {
+  name: 'DB-Test Lauf', date: '2026-01-01T10:00:00Z',
+  distance: 5000, duration: 1800, avgPace: 360,
+  avgHR: 150, maxHR: 170, calories: 300,
+  elevationGain: 50, elevationLoss: 50, steps: 5000,
+  trackpoints: [{ lat: 48.1, lon: 11.5, ele: 520, time: '2026-01-01T10:00:00Z', hr: 150, cad: null, distFromStart: 0 }],
+  paceSegments: [],
+};
+
+test('db: saveActivity returns a numeric id', async () => {
+  const id = await saveActivity({ ...TEST_ACTIVITY });
+  assert(typeof id === 'number' && id > 0, `Expected numeric id > 0, got ${id}`);
+});
+
+test('db: getAllActivities returns saved activity', async () => {
+  const all = await getAllActivities();
+  const found = all.find(a => a.name === 'DB-Test Lauf');
+  assert(found !== undefined, 'Saved activity not found in getAllActivities');
+});
+
+test('db: getActivity returns correct activity by id', async () => {
+  const all = await getAllActivities();
+  const saved = all.find(a => a.name === 'DB-Test Lauf');
+  assert(saved !== undefined, 'Could not find saved activity to get by id');
+  const fetched = await getActivity(saved.id);
+  assert(fetched.name === 'DB-Test Lauf', `Name mismatch: ${fetched.name}`);
+  assert(fetched.distance === 5000, `Distance mismatch: ${fetched.distance}`);
+});
+
+test('db: deleteActivity removes the activity', async () => {
+  const all = await getAllActivities();
+  const saved = all.find(a => a.name === 'DB-Test Lauf');
+  assert(saved !== undefined, 'Could not find activity to delete');
+  await deleteActivity(saved.id);
+  const after = await getAllActivities();
+  const found = after.find(a => a.name === 'DB-Test Lauf');
+  assert(found === undefined, 'Activity should have been deleted but still found');
+});
 
 updateSummary();
   </script>
