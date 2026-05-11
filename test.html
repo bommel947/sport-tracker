@@ -150,12 +150,40 @@ test('parseGPX: returns null for missing fields (no calories)', () => {
 test('parseGPX: throws on empty trackpoints', () => {
   const empty = `<?xml version="1.0"?><gpx version="1.1"><trk><trkseg></trkseg></trk></gpx>`;
   try { parseGPX(empty, 'empty.gpx'); assert(false, 'Should have thrown'); }
-  catch (e) { assert(e.message.includes('Trackpunkt'), `Wrong error: ${e.message}`); }
+  catch (e) { assert(e.message.includes('Trackpunkte'), `Wrong error: ${e.message}`); }
 });
 
 test('haversine: known distance ~789m between two points', () => {
   const d = haversine(48.1000, 11.5000, 48.1050, 11.5060);
-  assert(d > 700 && d < 900, `Expected ~789m, got ${Math.round(d)}m`);
+  assert(d > 720 && d < 760, `Expected ~740m, got ${Math.round(d)}m`);
+});
+
+test('calculatePaceSegments: returns empty array for < 1 km', () => {
+  const pts = [
+    { lat: 48.1, lon: 11.5, distFromStart: 0, time: '2026-01-01T10:00:00Z' },
+    { lat: 48.101, lon: 11.5, distFromStart: 111, time: '2026-01-01T10:01:00Z' },
+  ];
+  const segs = calculatePaceSegments(pts);
+  assert(Array.isArray(segs), 'Should return an array');
+  assert(segs.length === 0, `Expected 0 segments for short run, got ${segs.length}`);
+});
+
+test('calculatePaceSegments: returns 1 segment for exactly 1 km', () => {
+  // Build 11 points spanning just over 1 km (~111m each step)
+  const pts = [];
+  for (let i = 0; i <= 10; i++) {
+    pts.push({
+      lat: 48.1 + i * 0.001,
+      lon: 11.5,
+      distFromStart: i * 111,
+      time: new Date(Date.UTC(2026, 0, 1, 10, i)).toISOString(),
+    });
+  }
+  const segs = calculatePaceSegments(pts);
+  assert(Array.isArray(segs), 'Should return an array');
+  assert(segs.length >= 1, `Expected at least 1 segment, got ${segs.length}`);
+  assert(segs[0].km === 1, `First segment should be km 1, got ${segs[0].km}`);
+  assert(segs[0].pace > 0, `Pace should be > 0`);
 });
 
 // ── IndexedDB Tests (placeholders — will be filled in Task 3) ─────────────────

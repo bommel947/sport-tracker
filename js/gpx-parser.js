@@ -11,8 +11,9 @@ function haversine(lat1, lon1, lat2, lon2) {
 function parseGPX(gpxText, filename) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(gpxText, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Ungültige GPX-Datei (XML-Fehler)');
 
-  const nameEl = doc.querySelector('name');
+  const nameEl = doc.querySelector('trk > name') || doc.querySelector('name');
   const name = (nameEl && nameEl.textContent.trim())
     ? nameEl.textContent.trim()
     : filename.replace(/\.gpx$/i, '');
@@ -40,8 +41,8 @@ function parseGPX(gpxText, filename) {
       const allEls = ext.getElementsByTagName('*');
       for (const el of allEls) {
         const local = el.localName;
-        if (local === 'hr' && hr === null) hr = parseInt(el.textContent);
-        if (local === 'cad' && cad === null) cad = parseInt(el.textContent);
+        if (local === 'hr' && hr === null) hr = parseInt(el.textContent, 10);
+        if (local === 'cad' && cad === null) cad = parseInt(el.textContent, 10);
       }
     }
 
@@ -83,8 +84,8 @@ function parseGPX(gpxText, filename) {
   const allDocEls = doc.getElementsByTagName('*');
   for (const el of allDocEls) {
     const local = el.localName.toLowerCase();
-    if (local === 'calories' && calories === null) calories = parseInt(el.textContent) || null;
-    if (local === 'steps' && steps === null) steps = parseInt(el.textContent) || null;
+    if (local === 'calories' && calories === null) calories = parseInt(el.textContent, 10) || null;
+    if (local === 'steps' && steps === null) steps = parseInt(el.textContent, 10) || null;
   }
 
   const paceSegments = calculatePaceSegments(trackpoints);
@@ -112,7 +113,7 @@ function calculatePaceSegments(trackpoints) {
   let segStartTime = trackpoints[0]?.time ? new Date(trackpoints[0].time) : null;
 
   for (let i = 1; i < trackpoints.length; i++) {
-    const d = trackpoints[i].distFromStart - trackpoints[i - 1].distFromStart;
+    const d = haversine(trackpoints[i-1].lat, trackpoints[i-1].lon, trackpoints[i].lat, trackpoints[i].lon);
     accumulated += d;
     if (accumulated >= 1000 && segStartTime && trackpoints[i].time) {
       const segEndTime = new Date(trackpoints[i].time);
