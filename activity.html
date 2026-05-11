@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aktivität — SportTracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header>
+    <h1>🏃 SportTracker</h1>
+    <a href="index.html" class="btn-ghost">← Dashboard</a>
+  </header>
+
+  <div class="detail-layout">
+    <div id="map"></div>
+
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div id="activity-title" style="font-size:1.2rem;font-weight:700;margin-bottom:4px;"></div>
+        <div class="detail-date" id="activity-date"></div>
+      </div>
+
+      <div class="detail-stats" id="stat-grid">
+        <div class="detail-stat" id="stat-distance-card">
+          <div class="label">Distanz</div>
+          <div id="stat-distance" class="value color-accent"></div>
+          <div class="unit">km</div>
+        </div>
+        <div class="detail-stat" id="stat-duration-card">
+          <div class="label">Dauer</div>
+          <div id="stat-duration" class="value color-accent"></div>
+        </div>
+        <div class="detail-stat" id="stat-pace-card">
+          <div class="label">Ø Pace</div>
+          <div id="stat-pace" class="value color-green"></div>
+          <div class="unit">min/km</div>
+        </div>
+        <div class="detail-stat" id="stat-hr-card">
+          <div class="label">Herzfrequenz ø/max</div>
+          <div id="stat-hr" class="value color-red"></div>
+          <div class="unit">bpm</div>
+        </div>
+        <div class="detail-stat" id="stat-elevation-card">
+          <div class="label">Höhenmeter</div>
+          <div id="stat-elevation" class="value color-orange"></div>
+          <div class="unit">m auf/ab</div>
+        </div>
+        <div class="detail-stat" id="stat-calories-card">
+          <div class="label">Kalorien</div>
+          <div id="stat-calories" class="value color-purple"></div>
+          <div class="unit">kcal</div>
+        </div>
+        <div class="detail-stat" id="stat-steps-card">
+          <div class="label">Schritte</div>
+          <div id="stat-steps" class="value color-purple"></div>
+        </div>
+      </div>
+
+      <div class="chart-section" id="chart-elevation-section">
+        <h3>Höhenprofil</h3>
+        <div class="chart-wrap"><canvas id="chart-elevation"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-hr-section">
+        <h3>Herzfrequenz</h3>
+        <div class="chart-wrap"><canvas id="chart-hr"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-pace-section">
+        <h3>Pace pro km</h3>
+        <div class="chart-wrap"><canvas id="chart-pace"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/activity.js"></script>
+</body>
+</html>

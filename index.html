@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SportTracker</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header>
+    <h1>🏃 SportTracker</h1>
+    <button class="btn" onclick="document.getElementById('file-input').click()">+ GPX hochladen</button>
+    <input type="file" id="file-input" accept=".gpx" multiple style="display:none">
+  </header>
+
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Aktivitäten</div>
+        <div class="value" id="stat-count">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Gesamtdistanz</div>
+        <div class="value" id="stat-distance">0</div>
+        <div class="unit">km</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Gesamtzeit</div>
+        <div class="value" id="stat-time">0 h</div>
+      </div>
+    </div>
+
+    <div class="upload-zone" id="upload-zone">
+      <div class="upload-icon">📂</div>
+      <p>GPX-Datei hier ablegen oder klicken zum Auswählen</p>
+    </div>
+
+    <div class="section-title">Aktivitäten</div>
+    <div class="activity-list" id="activity-list">
+      <p class="empty">Noch keine Aktivitäten. Lade eine GPX-Datei hoch!</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/db.js"></script>
+  <script src="js/gpx-parser.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
