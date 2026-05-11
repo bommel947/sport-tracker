@@ -2,19 +2,166 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tests — SportTracker</title>
-  <link rel="stylesheet" href="app.css">
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #f1f5f9; padding: 24px; }
+    .pass { color: #34d399; } .fail { color: #f87171; }
+    h2 { color: #38bdf8; margin-bottom: 16px; }
+    .result { margin: 4px 0; font-size: 14px; }
+    #summary { margin-top: 16px; font-size: 1.1rem; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>🏃 SportTracker — Tests</h1>
-  </header>
-  <div class="container">
-    <div class="section-title">Test Results</div>
-    <div id="test-output" class="activity-list">
-      <p class="empty">No tests defined yet.</p>
-    </div>
-  </div>
+  <h2>SportTracker Tests</h2>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <script src="js/db.js"></script>
+  <script src="js/gpx-parser.js"></script>
+  <script>
+const results = document.getElementById('results');
+let passed = 0, failed = 0;
+
+function test(name, fn) {
+  try {
+    const result = fn();
+    if (result && typeof result.then === 'function') {
+      result.then(() => {
+        passed++;
+        results.innerHTML += `<div class="result pass">✅ ${name}</div>`;
+        updateSummary();
+      }).catch(e => {
+        failed++;
+        results.innerHTML += `<div class="result fail">❌ ${name}: ${e.message}</div>`;
+        updateSummary();
+      });
+    } else {
+      passed++;
+      results.innerHTML += `<div class="result pass">✅ ${name}</div>`;
+    }
+  } catch(e) {
+    failed++;
+    results.innerHTML += `<div class="result fail">❌ ${name}: ${e.message}</div>`;
+  }
+}
+
+function assert(condition, msg) {
+  if (!condition) throw new Error(msg || 'Assertion failed');
+}
+
+function updateSummary() {
+  document.getElementById('summary').textContent = `${passed} passed, ${failed} failed`;
+}
+
+// ── Sample GPX (Amazfit/Zepp format) ─────────────────────────────────────────
+const SAMPLE_GPX = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Zepp"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+  <trk>
+    <name>Testlauf</name>
+    <trkseg>
+      <trkpt lat="48.1000" lon="11.5000">
+        <ele>520.0</ele>
+        <time>2026-05-10T07:30:00Z</time>
+        <extensions>
+          <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>140</gpxtpx:hr>
+          </gpxtpx:TrackPointExtension>
+        </extensions>
+      </trkpt>
+      <trkpt lat="48.1050" lon="11.5060">
+        <ele>530.0</ele>
+        <time>2026-05-10T07:32:00Z</time>
+        <extensions>
+          <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>155</gpxtpx:hr>
+          </gpxtpx:TrackPointExtension>
+        </extensions>
+      </trkpt>
+      <trkpt lat="48.1100" lon="11.5120">
+        <ele>525.0</ele>
+        <time>2026-05-10T07:34:00Z</time>
+        <extensions>
+          <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>160</gpxtpx:hr>
+          </gpxtpx:TrackPointExtension>
+        </extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+
+const NO_NAME_GPX = SAMPLE_GPX.replace('<name>Testlauf</name>', '');
+
+// ── GPX Parser Tests ──────────────────────────────────────────────────────────
+test('parseGPX: extracts name from <name> tag', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.name === 'Testlauf', `Expected 'Testlauf', got '${a.name}'`);
+});
+
+test('parseGPX: falls back to filename without extension', () => {
+  const a = parseGPX(NO_NAME_GPX, 'meinlauf.gpx');
+  assert(a.name === 'meinlauf', `Expected 'meinlauf', got '${a.name}'`);
+});
+
+test('parseGPX: extracts 3 trackpoints', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.trackpoints.length === 3, `Expected 3, got ${a.trackpoints.length}`);
+});
+
+test('parseGPX: trackpoints have lat, lon, distFromStart', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  const p = a.trackpoints[0];
+  assert(p.lat === 48.1, `lat mismatch: ${p.lat}`);
+  assert(p.lon === 11.5, `lon mismatch: ${p.lon}`);
+  assert(p.distFromStart === 0, `first point distFromStart should be 0, got ${p.distFromStart}`);
+  assert(a.trackpoints[1].distFromStart > 0, 'second point distFromStart should be > 0');
+});
+
+test('parseGPX: total distance > 0', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.distance > 0, `Expected > 0, got ${a.distance}`);
+});
+
+test('parseGPX: duration is 240 seconds', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.duration === 240, `Expected 240, got ${a.duration}`);
+});
+
+test('parseGPX: extracts heart rate values', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.avgHR !== null, 'avgHR should not be null');
+  assert(a.maxHR === 160, `Expected maxHR 160, got ${a.maxHR}`);
+  assert(a.trackpoints[0].hr === 140, `Expected hr 140, got ${a.trackpoints[0].hr}`);
+});
+
+test('parseGPX: elevation gain = 10, loss = 5', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.elevationGain === 10, `Expected gain 10, got ${a.elevationGain}`);
+  assert(a.elevationLoss === 5, `Expected loss 5, got ${a.elevationLoss}`);
+});
+
+test('parseGPX: returns null for missing fields (no calories)', () => {
+  const a = parseGPX(SAMPLE_GPX, 'test.gpx');
+  assert(a.calories === null, `Expected null calories, got ${a.calories}`);
+});
+
+test('parseGPX: throws on empty trackpoints', () => {
+  const empty = `<?xml version="1.0"?><gpx version="1.1"><trk><trkseg></trkseg></trk></gpx>`;
+  try { parseGPX(empty, 'empty.gpx'); assert(false, 'Should have thrown'); }
+  catch (e) { assert(e.message.includes('Trackpunkt'), `Wrong error: ${e.message}`); }
+});
+
+test('haversine: known distance ~789m between two points', () => {
+  const d = haversine(48.1000, 11.5000, 48.1050, 11.5060);
+  assert(d > 700 && d < 900, `Expected ~789m, got ${Math.round(d)}m`);
+});
+
+// ── IndexedDB Tests (placeholders — will be filled in Task 3) ─────────────────
+// (no DB tests yet)
+
+updateSummary();
+  </script>
 </body>
 </html>
