@@ -1,3 +1,12 @@
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -26,8 +35,8 @@ function formatDuration(seconds) {
 }
 
 async function uploadFile(file) {
-  const text = await file.text();
   try {
+    const text = await file.text();
     const activity = parseGPX(text, file.name);
     await saveActivity(activity);
   } catch (err) {
@@ -80,8 +89,8 @@ function renderList(activities) {
   list.innerHTML = activities.map(a => `
     <div class="activity-item" onclick="window.location.href='activity.html?id=${a.id}'">
       <div class="activity-info">
-        <div class="activity-name">${a.name}</div>
-        <div class="activity-meta">${formatDate(a.date)} · ${(a.distance / 1000).toFixed(2)} km · ${formatPace(a.avgPace)}</div>
+        <div class="activity-name">${escapeHtml(a.name)}</div>
+        <div class="activity-meta">${escapeHtml(formatDate(a.date))} · ${(a.distance / 1000).toFixed(2)} km · ${escapeHtml(formatPace(a.avgPace))}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="activity-pace">${formatDuration(a.duration)}</span>
@@ -106,5 +115,5 @@ async function renderDashboard() {
 
 document.addEventListener('DOMContentLoaded', () => {
   setupUploadZone();
-  renderDashboard();
+  renderDashboard().catch(err => showToast(`Fehler beim Laden: ${err.message}`));
 });
